@@ -3,7 +3,7 @@ const app = express();
 const union = require('./union');
 
 // Create an object with a type for each name
-const ApiErrors = union([
+const Error = union([
   'InvalidCredentials',
   'UserNotFound',
   'Other',
@@ -12,14 +12,14 @@ const ApiErrors = union([
 const routes = {
   authorize: (request, response, next) => {
     // validate credentials and then:
-    next(ApiErrors.InvalidCredentials());
+    next(Error.InvalidCredentials());
   },
   user: (request, response, next) => {
     // user doesn't exist in database
-    next(ApiErrors.UserNotFound(`User ${request.params.id} not found`));
+    next(Error.UserNotFound(`User ${request.params.id} not found`));
   },
   other: (request, response, next) => {
-    next(ApiErrors.Other({ foo: 'bar' }));
+    next(Error.Other({ foo: 'bar' }));
   }
 };
 
@@ -28,8 +28,8 @@ app.get('/user/:id', routes.user);
 app.get('/other', routes.other);
 
 app.use((error, request, response, next) => {
+  // with match we decide what to do with a value of type Error
   error.match({
-    // each type has an object with a method `match`.
     InvalidCredentials: () => response.sendStatus(401),
     UserNotFound: message => response.status(404).send(message),
     Other: data => response.status(500).send(data),
